@@ -10,7 +10,7 @@ from django.urls import reverse
     'name, args',
     [
         ('news:home', None),
-        ('news:detail', pytest.lazy_fixture('id_for_args')),
+        ('news:detail', pytest.lazy_fixture('id_for_news')),
         ('users:login', None),
         ('users:logout', None),
         ('users:signup', None)
@@ -20,35 +20,6 @@ def test_home_availability_for_anonymous_user(client, name, args):
     url = reverse(name, args=args)
     response = client.get(url)
     assert response.status_code == HTTPStatus.OK
-
-
-# Добавляем к тесту ещё один декоратор parametrize; в его параметры
-# нужно передать фикстуры-клиенты и ожидаемый код ответа для каждого клиента.
-# @pytest.mark.parametrize(
-#     # parametrized_client - название параметра,
-#     # в который будут передаваться фикстуры;
-#     # Параметр expected_status - ожидаемый статус ответа.
-#     'parametrized_client, expected_status',
-#     # В кортеже с кортежами передаём значения для параметров:
-#     (
-#         ('not_author_client', HTTPStatus.NOT_FOUND),
-#         ('author_client', HTTPStatus.OK)
-#     ),
-# )
-# # Этот декоратор оставляем таким же, как в предыдущем тесте.
-# @pytest.mark.parametrize(
-#     'name',
-#     ('notes:detail', 'notes:edit', 'notes:delete'),
-# )
-# # В параметры теста добавляем имена parametrized_client и expected_status.
-# def test_pages_availability_for_different_users(
-#         parametrized_client, name, note, expected_status
-# ):
-#     url = reverse(name, args=(note.slug,))
-#     # Делаем запрос от имени клиента parametrized_client:
-#     response = parametrized_client.get(url)
-#     # Ожидаем ответ страницы, указанный в expected_status:
-#     assert response.status_code == expected_status
 
 
 @pytest.mark.parametrize(
@@ -62,35 +33,27 @@ def test_home_availability_for_anonymous_user(client, name, args):
 )
 @pytest.mark.parametrize(
     'name',
-    ('news:detail', 'news:edit', 'news:delete'),
+    ('news:edit', 'news:delete'),
 )
 def test_pages_availability_for_author(
         parametrized_client, name, comment, expected_status
 ):
-    url = reverse(name, args=(comment.id,))
+    url = reverse(name, args=(comment.id,))  # pytest.lazy_fixture('id_for_comment')
     response = parametrized_client.get(url)
     assert response.status_code == expected_status
 
 
 @pytest.mark.parametrize(
-    # Вторым параметром передаём note_object,
-    # в котором будет либо фикстура с объектом заметки, либо None.
-    'name, note_object',
+    'name, comment_object',
     (
-        ('notes:detail', pytest.lazy_fixture('note')),
-        ('notes:edit', pytest.lazy_fixture('note')),
-        ('notes:delete', pytest.lazy_fixture('note')),
-        ('notes:add', None),
-        ('notes:success', None),
-        ('notes:list', None),
+        ('news:edit', pytest.lazy_fixture('comment')),
+        ('news:delete', pytest.lazy_fixture('comment')),
     ),
 )
-# Передаём в тест анонимный клиент, name проверяемых страниц и note_object:
-def test_redirects(client, name, note_object):
+def test_redirects(client, name, comment_object):
     login_url = reverse('users:login')
-    # Формируем URL в зависимости от того, передан ли объект заметки:
-    if note_object is not None:
-        url = reverse(name, args=(note_object.slug,))
+    if comment_object is not None:
+        url = reverse(name, args=(comment_object.id,))
     else:
         url = reverse(name)
     expected_url = f'{login_url}?next={url}'

@@ -42,10 +42,13 @@ def news():
 
 
 @pytest.fixture
-def comment():
-    comment = Comment.objects.create(  # Создаём объект заметки.
-        text='Текст заметки',
-    )
+def id_for_news(news):
+    return (news.id,)
+
+
+@pytest.fixture
+def comment(author, news):
+    comment = Comment.objects.create(news=news, author=author, text='Текст заметки',)
     return comment
 
 
@@ -57,6 +60,7 @@ def form_data():
         'slug': 'new-slug'
     }
 
-@pytest.fixture
-def id_for_args(news):
-    return (news.id,)
+
+# @pytest.fixture
+# def id_for_comment(comment):
+#     return (comment.id,)
