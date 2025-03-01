@@ -1,16 +1,13 @@
 import pytest
 
 from django.urls import reverse
-from django.utils import timezone
 
 from yanews.settings import NEWS_COUNT_ON_HOME_PAGE
 from news.forms import CommentForm
-from news.models import Comment, News
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    # Задаём названия для параметров:
     'parametrized_client, news_on_page',
     (
         (pytest.lazy_fixture('not_author_client'), NEWS_COUNT_ON_HOME_PAGE),
@@ -33,7 +30,7 @@ def test_news_count_and_news_order(
 
 
 @pytest.mark.django_db
-def test_comments_order(comment_in_page, news, author_client, detail_url):
+def test_comments_order(comment_in_page, news, author_client):
     url = reverse('news:detail', args=[news.id])
     response = author_client.get(url)
     assert 'news' in response.context
@@ -46,14 +43,11 @@ def test_comments_order(comment_in_page, news, author_client, detail_url):
 
 @pytest.mark.django_db
 def test_anonymous_client_has_no_form(client, detail_url):
-    """Проверяет, что анонимный клиент не видит форму."""
     response = client.get(detail_url)
     assert 'form' not in response.context
 
 @pytest.mark.django_db
-def test_authorized_client_has_form(not_author_client, detail_url, author):
-    """Проверяет, что авторизованный клиент видит форму."""
-    # client.force_login(author)  # Авторизуем клиента
+def test_authorized_client_has_form(not_author_client, detail_url):
     response = not_author_client.get(detail_url)
     assert 'form' in response.context
     assert isinstance(response.context['form'], CommentForm)

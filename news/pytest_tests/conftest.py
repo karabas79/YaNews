@@ -37,7 +37,7 @@ def not_author_client(not_author):
 def news():
     news = News.objects.create(
         title='Заголовок',
-        text='Текст заметки',
+        text='Текст новости',
     )
     return news
 
@@ -52,7 +52,7 @@ def comment(author, news):
     comment = Comment.objects.create(
         news=news,
         author=author,
-        text='Текст заметки',
+        text='Текст комментария',
     )
     return comment
 
@@ -89,7 +89,7 @@ def comment_in_page(author, news):
     for index in range(10):
         # Создаём объект и записываем его в переменную.
         comment = Comment.objects.create(
-            news=news, author=author, text=f'Tекст {index}',
+            news=news, author=author, text=f'Tекст комментария {index}',
         )
         # Сразу после создания меняем время создания комментария.
         now = timezone.now()
@@ -97,6 +97,7 @@ def comment_in_page(author, news):
         comment.save()
         comment_list.append(comment)
     return comment_list
+
 
 @pytest.fixture
 def detail_url(news):
