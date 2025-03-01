@@ -2,12 +2,11 @@ from http import HTTPStatus
 import pdb
 import pytest
 from pytest_django.asserts import assertRedirects, assertFormError
-from pytils.translit import slugify
 
 from django.urls import reverse
 
 from news.forms import BAD_WORDS, WARNING
-from news.models import News, Comment
+from news.models import Comment
 
 
 @pytest.mark.django_db
@@ -16,12 +15,10 @@ def test_anonymous_user_cant_create_comment(client, detail_url, form_data):
     response = client.post(url, data=form_data)
     login_url = reverse('users:login')
     expected_url = f'{login_url}?next={url}'
-    # pdb.set_trace()
     assertRedirects(response, expected_url)
     assert Comment.objects.count() == 0
 
 
-# @pytest.mark.django_db
 def test_authorized_user_can_create_comment(
     author_client,
     author,
@@ -29,13 +26,11 @@ def test_authorized_user_can_create_comment(
     form_data,
     news
 ):
-    """Проверяет, что авторизованный пользователь может создать комментарий."""
-    # Совершаем POST-запрос через авторизованный клиент.
     url = detail_url
     response = author_client.post(url, data=form_data)
     assertRedirects(response, f'{url}#comments')
     assert Comment.objects.count() == 1
-    assert response.url == f'{url}#comments'  # Проверяем URL редиректа
+    assert response.url == f'{url}#comments'
     new_comment = Comment.objects.get()
 
     assert new_comment.text == form_data['text']
@@ -45,65 +40,61 @@ def test_authorized_user_can_create_comment(
 
 def test_user_cant_use_bad_words(author_client, detail_url, form_data):
     bad_words_data = {'text': f'Какой-то текст, {BAD_WORDS[0]}, еще текст'}
-    # Отправляем запрос через авторизованный клиент.
     response = author_client.post(detail_url, data=bad_words_data)
-    # Проверяем, есть ли в ответе ошибка формы.
     assertFormError(
         response,
         form='form',
         field='text',
         errors=WARNING
     )
-    # Дополнительно убедимся, что комментарий не был создан.
     comments_count = Comment.objects.count()
     assert comments_count == 0
 
 
-def test_author_can_delete_comment(self):
+def test_author_can_delete_comment(author_client, delete_url, url_to_comments):
     comments_count = Comment.objects.count()
-    # В начале теста в БД всегда есть 1 комментарий, созданный в setUpTestData.
-    self.assertEqual(comments_count, 1)
-    # От имени автора комментария отправляем DELETE-запрос на удаление.
-    response = self.author_client.delete(self.delete_url)
-    # Проверяем, что редирект привёл к разделу с комментариями.
-    # Заодно проверим статус-коды ответов.
-    self.assertRedirects(response, self.url_to_comments)
-    # Считаем количество комментариев в системе.
+    assert comments_count == 1
+    response = author_client.delete(delete_url)
+    # pdb.set_trace()
+    assertRedirects(response, url_to_comments)
     comments_count = Comment.objects.count()
-    # Ожидаем ноль комментариев в системе.
-    self.assertEqual(comments_count, 0)
+    assert comments_count == 0
 
 
-def test_user_cant_delete_comment_of_another_user(self):
+def test_user_cant_delete_comment_of_another_user(
+    delete_url,
+    not_author_client
+):
     comments_count = Comment.objects.count()
-    # В начале теста в БД всегда есть 1 комментарий, созданный в setUpTestData.
-    self.assertEqual(comments_count, 1)
-    # Выполняем запрос на удаление от пользователя-читателя.
-    response = self.reader_client.delete(self.delete_url)
-    # Проверяем, что вернулась 404 ошибка.
-    self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-    # Убедимся, что комментарий по-прежнему на месте.
+    # pdb.set_trace()
+    assert comments_count == 1
+    response = not_author_client.delete(delete_url)
+    assert response.status_code == HTTPStatus.NOT_FOUND
     comments_count = Comment.objects.count()
-    self.assertEqual(comments_count, 1)
+    assert comments_count == 1
 
 
-def test_author_can_edit_comment(self):
-    # Выполняем запрос на редактирование от имени автора комментария.
-    response = self.author_client.post(self.edit_url, data=self.form_data)
-    # Проверяем, что сработал редирект.
-    self.assertRedirects(response, self.url_to_comments)
-    # Обновляем объект комментария.
-    self.comment.refresh_from_db()
-    # Проверяем, что текст комментария соответствует обновленному.
-    self.assertEqual(self.comment.text, self.NEW_COMMENT_TEXT)
+def test_author_can_edit_comment(
+    author_client,
+    comment,
+    edit_url,
+    form_data,
+    url_to_comments
+):
+    response = author_client.post(edit_url, data=form_data)
+    assertRedirects(response, url_to_comments)
+    comment.refresh_from_db()
+    assert comment.text == form_data['text']
 
 
-def test_user_cant_edit_comment_of_another_user(self):
-    # Выполняем запрос на редактирование от имени другого пользователя.
-    response = self.reader_client.post(self.edit_url, data=self.form_data)
-    # Проверяем, что вернулась 404 ошибка.
-    self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-    # Обновляем объект комментария.
-    self.comment.refresh_from_db()
-    # Проверяем, что текст остался тем же, что и был.
-    self.assertEqual(self.comment.text, self.COMMENT_TEXT)
+def test_user_cant_edit_comment_of_another_user(
+    comment,
+    edit_url,
+    form_data,
+    not_author_client
+):
+    original_text = comment.text
+    response = not_author_client.post(edit_url, data=form_data)
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    comment.refresh_from_db()
+    assert comment.text == original_text

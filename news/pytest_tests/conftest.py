@@ -103,3 +103,20 @@ def comment_in_page(author, news):
 def detail_url(news):
     """Создает URL для страницы детали новости."""
     return reverse('news:detail', args=[news.id])
+
+
+@pytest.fixture
+def edit_url(comment):
+    """Создает URL для страницы детали новости."""
+    return reverse('news:edit', args=[comment.id])
+
+
+@pytest.fixture
+def delete_url(comment):
+    """Создает URL для страницы детали новости."""
+    return reverse('news:delete', args=[comment.id])
+
+
+@pytest.fixture
+def url_to_comments(detail_url):
+    return detail_url + '#comments'
