@@ -1,11 +1,11 @@
-import pytest
 from datetime import datetime, timedelta
 
+import pytest
 from django.test.client import Client
 from django.urls import reverse
 from django.utils import timezone
 
-from news.models import News, Comment
+from news.models import Comment, News
 from yanews.settings import NEWS_COUNT_ON_HOME_PAGE
 
 
@@ -83,15 +83,12 @@ def news_in_page():
 
 @pytest.fixture
 def comment_in_page(author, news):
-    # today = datetime.today()
     now = datetime.now()
     comment_list = []
     for index in range(10):
-        # Создаём объект и записываем его в переменную.
         comment = Comment.objects.create(
             news=news, author=author, text=f'Tекст комментария {index}',
         )
-        # Сразу после создания меняем время создания комментария.
         now = timezone.now()
         comment.created = now + timedelta(days=index)
         comment.save()
@@ -101,19 +98,16 @@ def comment_in_page(author, news):
 
 @pytest.fixture
 def detail_url(news):
-    """Создает URL для страницы детали новости."""
     return reverse('news:detail', args=[news.id])
 
 
 @pytest.fixture
 def edit_url(comment):
-    """Создает URL для страницы детали новости."""
     return reverse('news:edit', args=[comment.id])
 
 
 @pytest.fixture
 def delete_url(comment):
-    """Создает URL для страницы детали новости."""
     return reverse('news:delete', args=[comment.id])
 
 

@@ -1,9 +1,8 @@
 from http import HTTPStatus
-import pdb
-import pytest
-from pytest_django.asserts import assertRedirects, assertFormError
 
+import pytest
 from django.urls import reverse
+from pytest_django.asserts import assertFormError, assertRedirects
 
 from news.forms import BAD_WORDS, WARNING
 from news.models import Comment
@@ -66,7 +65,6 @@ def test_user_cant_delete_comment_of_another_user(
     not_author_client
 ):
     comments_count = Comment.objects.count()
-    # pdb.set_trace()
     assert comments_count == 1
     response = not_author_client.delete(delete_url)
     assert response.status_code == HTTPStatus.NOT_FOUND

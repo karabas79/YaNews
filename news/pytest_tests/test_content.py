@@ -1,9 +1,8 @@
 import pytest
-
 from django.urls import reverse
 
-from yanews.settings import NEWS_COUNT_ON_HOME_PAGE
 from news.forms import CommentForm
+from yanews.settings import NEWS_COUNT_ON_HOME_PAGE
 
 
 @pytest.mark.django_db
@@ -45,6 +44,7 @@ def test_comments_order(comment_in_page, news, author_client):
 def test_anonymous_client_has_no_form(client, detail_url):
     response = client.get(detail_url)
     assert 'form' not in response.context
+
 
 @pytest.mark.django_db
 def test_authorized_client_has_form(not_author_client, detail_url):
